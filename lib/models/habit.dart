@@ -1,6 +1,7 @@
 class Habit {
-  final String name;
-  final int streak;
+  String name;
+  int streak;
+  bool completedToday;
 
-  Habit({required this.name, this.streak = 0});
+  Habit({required this.name, this.streak = 0, this.completedToday = false});
 }

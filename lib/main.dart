@@ -27,15 +27,29 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  // Dynamic list, starting with Step 2’s static data
   List<Habit> habits = [
-    Habit(name: 'Drink Water', streak: 3),
-    Habit(name: 'Exercise', streak: 1),
+    Habit(name: 'Drink Water', streak: 3, completedToday: false),
+    Habit(name: 'Exercise', streak: 1, completedToday: false),
   ];
 
   void _addHabit(Habit newHabit) {
     setState(() {
       habits.add(newHabit);
+    });
+  }
+
+  void _toggleHabitCompletion(int index) {
+    setState(() {
+      final habit = habits[index];
+      if (habit.completedToday) {
+        // Undo completion: decrease streak if it was completed today
+        habit.completedToday = false;
+        if (habit.streak > 0) habit.streak--;
+      } else {
+        // Mark as completed: increase streak
+        habit.completedToday = true;
+        habit.streak++;
+      }
     });
   }
 
@@ -52,7 +66,17 @@ class _HomeScreenState extends State<HomeScreen> {
                   final habit = habits[index];
                   return ListTile(
                     title: Text(habit.name),
-                    trailing: Text('Streak: ${habit.streak}'),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text('Streak: ${habit.streak}'),
+                        const SizedBox(width: 8),
+                        Checkbox(
+                          value: habit.completedToday,
+                          onChanged: (value) => _toggleHabitCompletion(index),
+                        ),
+                      ],
+                    ),
                   );
                 },
               ),
