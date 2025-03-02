@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'models/habit.dart';
 import 'screens/add_habit_screen.dart';
+import 'services/database_service.dart';
 
 void main() {
   runApp(const HabitTrackerApp());
@@ -27,29 +28,39 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  List<Habit> habits = [
-    Habit(name: 'Drink Water', streak: 3, completedToday: false),
-    Habit(name: 'Exercise', streak: 1, completedToday: false),
-  ];
+  final DatabaseService _dbService = DatabaseService();
+  List<Habit> habits = [];
 
-  void _addHabit(Habit newHabit) {
+  @override
+  void initState() {
+    super.initState();
+    _loadHabits();
+  }
+
+  Future<void> _loadHabits() async {
+    final loadedHabits = await _dbService.getHabits();
     setState(() {
-      habits.add(newHabit);
+      habits = loadedHabits;
     });
   }
 
-  void _toggleHabitCompletion(int index) {
+  void _addHabit(Habit newHabit) async {
+    await _dbService.insertHabit(newHabit);
+    _loadHabits(); // Refresh list
+  }
+
+  void _toggleHabitCompletion(int index) async {
+    final habit = habits[index];
+    if (habit.completedToday) {
+      habit.completedToday = false;
+      if (habit.streak > 0) habit.streak--;
+    } else {
+      habit.completedToday = true;
+      habit.streak++;
+    }
+    await _dbService.updateHabit(habit);
     setState(() {
-      final habit = habits[index];
-      if (habit.completedToday) {
-        // Undo completion: decrease streak if it was completed today
-        habit.completedToday = false;
-        if (habit.streak > 0) habit.streak--;
-      } else {
-        // Mark as completed: increase streak
-        habit.completedToday = true;
-        habit.streak++;
-      }
+      habits[index] = habit;
     });
   }
 
