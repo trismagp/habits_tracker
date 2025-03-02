@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'models/habit.dart';
+import 'screens/add_habit_screen.dart';
 
 void main() {
   runApp(const HabitTrackerApp());
@@ -13,19 +14,30 @@ class HabitTrackerApp extends StatelessWidget {
     return MaterialApp(
       title: 'Habit Tracker',
       theme: ThemeData(primarySwatch: Colors.blue),
-      home: HomeScreen(),
+      home: const HomeScreen(),
     );
   }
 }
 
-class HomeScreen extends StatelessWidget {
-  HomeScreen({super.key});
+class HomeScreen extends StatefulWidget {
+  const HomeScreen({super.key});
 
-  // Hardcoded list of habits for testing
-  final List<Habit> habits = [
+  @override
+  _HomeScreenState createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  // Dynamic list, starting with Step 2’s static data
+  List<Habit> habits = [
     Habit(name: 'Drink Water', streak: 3),
     Habit(name: 'Exercise', streak: 1),
   ];
+
+  void _addHabit(Habit newHabit) {
+    setState(() {
+      habits.add(newHabit);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -44,6 +56,17 @@ class HomeScreen extends StatelessWidget {
                   );
                 },
               ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => AddHabitScreen(onHabitAdded: _addHabit),
+            ),
+          );
+        },
+        child: const Icon(Icons.add),
+      ),
     );
   }
 }
