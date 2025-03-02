@@ -18,16 +18,24 @@ class DatabaseService {
     final path = join(directory.path, 'habit_tracker.db');
     return await openDatabase(
       path,
-      version: 1,
+      version: 2, // Bump version for schema change
       onCreate: (db, version) async {
         await db.execute('''
           CREATE TABLE $tableName (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL,
             streak INTEGER NOT NULL,
-            completedToday INTEGER NOT NULL
+            completedToday INTEGER NOT NULL,
+            lastCompleted TEXT
           )
         ''');
+      },
+      onUpgrade: (db, oldVersion, newVersion) async {
+        if (oldVersion < 2) {
+          await db.execute(
+            'ALTER TABLE $tableName ADD COLUMN lastCompleted TEXT',
+          );
+        }
       },
     );
   }

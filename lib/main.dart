@@ -39,6 +39,27 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _loadHabits() async {
     final loadedHabits = await _dbService.getHabits();
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+
+    for (var habit in loadedHabits) {
+      // Reset completedToday if it's a new day
+      final lastCompletedDay =
+          habit.lastCompleted != null
+              ? DateTime(
+                habit.lastCompleted!.year,
+                habit.lastCompleted!.month,
+                habit.lastCompleted!.day,
+              )
+              : null;
+      if (lastCompletedDay != today) {
+        habit.completedToday = false;
+        if (lastCompletedDay != null &&
+            today.difference(lastCompletedDay).inDays > 1) {
+          habit.streak = 0; // Reset streak if a day was missed
+        }
+      }
+    }
     setState(() {
       habits = loadedHabits;
     });
@@ -46,22 +67,38 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _addHabit(Habit newHabit) async {
     await _dbService.insertHabit(newHabit);
-    _loadHabits(); // Refresh list
+    _loadHabits();
   }
 
   void _toggleHabitCompletion(int index) async {
     final habit = habits[index];
-    if (habit.completedToday) {
-      habit.completedToday = false;
-      if (habit.streak > 0) habit.streak--;
-    } else {
-      habit.completedToday = true;
-      habit.streak++;
-    }
-    await _dbService.updateHabit(habit);
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final lastCompletedDay =
+        habit.lastCompleted != null
+            ? DateTime(
+              habit.lastCompleted!.year,
+              habit.lastCompleted!.month,
+              habit.lastCompleted!.day,
+            )
+            : null;
+
     setState(() {
-      habits[index] = habit;
+      if (habit.completedToday) {
+        habit.completedToday = false;
+        if (habit.streak > 0) habit.streak--;
+        habit.lastCompleted = null; // Clear last completed if undone
+      } else {
+        habit.completedToday = true;
+        if (lastCompletedDay == today.subtract(const Duration(days: 1))) {
+          habit.streak++; // Continue streak if yesterday was completed
+        } else {
+          habit.streak = 1; // Start new streak
+        }
+        habit.lastCompleted = now;
+      }
     });
+    await _dbService.updateHabit(habit);
   }
 
   @override
